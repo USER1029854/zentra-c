@@ -104,8 +104,13 @@ grant). So no guard has a dollar price below what it protects that an outsider c
 2. **Upgrade authority** over ctUSD and the SwapFacility sits behind EOA-owned ProxyAdmins; MToken has
    an admin `migrate()`. A compromised admin key drains everything. *Key-compromise / out of scope.*
 3. **Backing = a Hyperlane bridge.** M is minted by the SpokePortal from Hyperlane-bridged M; ctUSD's
-   backing is only as sound as Hyperlane's default ISM and the hub-side lock. The app-layer receive
-   path is correctly gated (mailbox + peer + replay), but the ISM validator set was not verified.
+   backing is only as sound as Hyperlane's ISM and the hub-side lock. The app-layer receive path is
+   correctly gated (`msg.sender==mailbox && sender==peer` + replay). The mailbox default ISM
+   `0x61dbB636…` is a **2-of-2 aggregation** of a domain-routing ISM (`0xf89621…`, type ROUTING →
+   per-origin validator multisig) **and** a null-type module (`0xd8B9…`, owner-configured); because
+   both are required, the security floor is the hub-domain validator multisig, so **an outsider cannot
+   forge an M mint** without defeating that multisig. Residual trust = that validator set and the ISM
+   admin `0x4fC003a3…` (bridge infra; validator roster/admin not fully enumerated here).
 4. **Money market (Aave V3 fork, Pool `0xfb79…06F5`, oracle `ZentraOracle 0xd8A0…8144`).** Faithful
    fork (value-logic byte-identical, external libs re-verified at deployed addresses); prices are
    RedStone push (USDC/WCBTC), Stork+CAPO upside-cap (sUSN), static $1 (ctUSD) — **none
@@ -117,11 +122,12 @@ grant). So no guard has a dollar price below what it protects that an outsider c
 ---
 
 ## 6. Null Report — the three places a missed bug most likely hides (ranked by cost-if-wrong)
-1. **SpokePortal's Hyperlane ISM / mailbox trust root.** The app-layer checks are correct, but I did
-   not verify the mailbox `0x3a464f7…` default ISM's validator set/threshold. A weak or
-   self-controlled ISM would let a forged cross-chain message mint unbacked M → unbacked ctUSD.
-   *Settle it:* enumerate the mailbox's default ISM, its validators, and threshold; confirm they are
-   Hyperlane-canonical and not attacker-controlled.
+1. **SpokePortal's Hyperlane validator roster (largely closed).** The ISM is a sound 2-of-2
+   aggregation with a hub-domain routing multisig, so a forged mint needs the multisig defeated — not
+   an outsider capability. What I did **not** enumerate: the routing ISM's actual domain-1 validator
+   addresses/threshold and the ISM admin `0x4fC003a3…`'s controls. A misconfigured (e.g. 1-of-1
+   self-owned) validator set would reopen forged-mint → unbacked ctUSD. *Settle it:* enumerate the
+   domain-1 multisig validators + threshold and the admin's timelock/multisig status.
 2. **Two unverified contracts in adjacent price/hook paths:** the ctUSD money-market price feed
    `0x2CbFF2093…` (behaves as a static $1 feed on every call I made) and the Pool hook
    `SecurityIntegrationV2 0x9dF4BaCB…` (fail-closed, cannot move funds by construction). Behavior was

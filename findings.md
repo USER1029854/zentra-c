@@ -15,7 +15,7 @@ _(none — empty set)_
 |----|-------|-------|---------------|-----------------------|------|
 | R1 | centralization | ctUSD FREEZE + FORCED_TRANSFER = one EOA `0x2a5c…1f32` | up to full ~$4.9M ctUSD supply (freeze+seize any holder) | No (privileged EOA, not acquirable) | #1 trust risk; recommend splitting roles + timelock/multisig |
 | R2 | upgrade/key | ctUSD & SwapFacility proxy admins (EOA-owned); MToken `migrate()` | entire reserve | No (key compromise) | move upgrade rights behind a timelocked multisig |
-| R3 | dependency | M backing minted by SpokePortal from Hyperlane-bridged M | entire reserve | No (bridge infra) | backing integrity = Hyperlane default ISM + hub lock; verify ISM validator set |
+| R3 | dependency | M backing minted by SpokePortal from Hyperlane-bridged M | entire reserve | No (bridge infra) | default ISM = 2-of-2 aggregation (routing multisig + null module) → not outsider-forgeable; residual = hub-domain validator roster + ISM admin 0x4fC003a3 (not fully enumerated) |
 | R4 | DoS | ZentraOracle has no fallback (`getFallbackOracle()=0x0`) | money-market solvency | No (griefing, no beneficiary) | stale feed reverts liquidationCall → bad-debt; market currently paused |
 
 ## Value at risk (live, re-read at head)
